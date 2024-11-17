@@ -64,13 +64,20 @@ public class PlayerController : MonoBehaviour
 	}
 
 	public bool IsWalking() {
-		return false;
+		return (velocity.x != 0);
 	}
 	public bool IsGrounded() {
-		return false;
+		return true;
 	}
 
+	FacingDirection currentDirection = FacingDirection.right;
+
 	public FacingDirection GetFacingDirection() {
-		return FacingDirection.left;
+		if (velocity.x == 0) return currentDirection;
+
+		FacingDirection dir = (velocity.x == -1) ? FacingDirection.left : FacingDirection.right;
+		currentDirection = dir;
+
+		return dir;
 	}
 }
