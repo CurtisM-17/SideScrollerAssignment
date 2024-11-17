@@ -67,7 +67,9 @@ public class PlayerController : MonoBehaviour
 		return (velocity.x != 0);
 	}
 	public bool IsGrounded() {
-		return true;
+		bool isGrounded = Physics2D.Raycast(rb.position, Vector2.down, 1.01f, 1 << 3);
+
+		return isGrounded;
 	}
 
 	FacingDirection currentDirection = FacingDirection.right;
