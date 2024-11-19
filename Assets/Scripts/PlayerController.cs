@@ -11,23 +11,42 @@ public class PlayerController : MonoBehaviour
 	public float accelerationTime = 0.3f;
 	public float decelerationTime = 0.5f;
 	public float turnTime = 0.1f;
+	public float surfaceDistance = 1.01f;
+	public float terminalVelocity = 7f;
+
+	public float jumpApexHeight, jumpApexTime;
+	float jumpVelocity;
 
 	float currentSpeed = 0f;
+    Vector2 colliderSize;
+	bool isJumping = false;
 
-	public enum FacingDirection {
+	float timer;
+
+    public enum FacingDirection {
 		left, right
 	}
 
 	public void Start() {
 		rb = GetComponent<Rigidbody2D>();
-	}
+		colliderSize = GetComponent<BoxCollider2D>().size;
+
+        jumpVelocity = 2 * (jumpApexHeight / jumpApexTime);
+    }
 
 	public void Update() {
+		timer += Time.deltaTime;
+
 		// The input from the player needs to be determined and
 		// then passed in the to the MovementUpdate which should
 		// manage the actual movement of the character.
 		Vector2 playerInput = new(Input.GetAxisRaw("Horizontal"), 0);
 		MovementUpdate(playerInput);
+
+		if (Input.GetKey(KeyCode.Space)) Jump();
+		if (isJumping) Jump();
+
+		rb.velocity = new(rb.velocity.x, Mathf.Clamp(rb.velocity.y, -jumpVelocity, terminalVelocity));
 	}
 
 	float FeatherSpeed(float featherTime) {
@@ -61,19 +80,29 @@ public class PlayerController : MonoBehaviour
 				lastXDir = playerInput.x; // Match X direction
 			}
 		}
+
+		rb.velocity = new(currentSpeed * velocity.x, rb.velocity.y);
 	}
 
-	public void FixedUpdate() { // Because we're dealing with RigidBodies
-		rb.position += currentSpeed * Time.fixedDeltaTime * velocity;
+	bool GroundedRay(float xPos)
+	{
+        // Raycast downwards slightly longer than the length of the character from the given X position
+		return Physics2D.Raycast(new(xPos, rb.position.y), Vector2.down, surfaceDistance, 1 << 3);
 	}
 
 	public bool IsGrounded() {
-		// Raycast downwards slightly longer than the length of the character from the center
-		return Physics2D.Raycast(rb.position, Vector2.down, 1.01f, 1 << 3); // Use bitshift to stick to layer 3 (ground layer only)
+		if (isJumping) return false;
+
+		bool leftRay = GroundedRay(rb.position.x - (colliderSize.x / 2));
+		bool middleRay = GroundedRay(rb.position.x);
+		bool rightRay = GroundedRay(rb.position.x + (colliderSize.x / 2));
+
+		// Only need one of the three rays to hit
+		return (leftRay || middleRay || rightRay);
 	}
 
 	public bool IsWalking() {
-		return (velocity.x != 0); // If the velocity is 0 then there is no movement
+		return (velocity.x != 0 && currentSpeed >= (maxSpeed * 0.5f)); // If the velocity is 0 then there is no movement
 	}
 
 	FacingDirection currentDirection = FacingDirection.right; // Whichever direction the character is currently facing
@@ -85,5 +114,30 @@ public class PlayerController : MonoBehaviour
 		currentDirection = dir; // Update the current direction
 
 		return dir;
+	}
+
+	/// Jump
+	float jumpStartPos;
+
+	void Jump() {
+		if (!isJumping) {
+            // Begin jump
+            if (isJumping || !IsGrounded()) return;
+
+            jumpVelocity = 2 * (jumpApexHeight / jumpApexTime); // Account for runtime updates
+
+			isJumping = true;
+			rb.gravityScale = 0;
+			jumpStartPos = rb.position.y;
+
+			rb.velocity = new(rb.velocity.x, jumpVelocity);
+		}
+
+		if (rb.position.y >= jumpStartPos + jumpApexHeight) rb.velocity = new(rb.velocity.x, -jumpVelocity);
+		//print(rb.position.y + " | " + jumpStartPos + " | " + jumpApexHeight + " | " + (jumpStartPos + jumpApexHeight));
+		if (rb.velocity.y == 0) isJumping = false;
+
+		//float gravity = (-2 * jumpApexHeight) / (jumpApexTime * jumpApexTime);
+		//rb.velocity = new(rb.velocity.x, gravity * (timer - jumpStartTime) + jumpVelocity);
 	}
 }

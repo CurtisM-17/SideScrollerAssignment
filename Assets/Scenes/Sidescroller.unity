@@ -1470,7 +1470,7 @@ CompositeCollider2D:
   m_GameObject: {fileID: 1054579204}
   m_Enabled: 1
   m_Density: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: cab62f629c71f884f892a1c2732256fb, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -1692,10 +1692,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 86a1ce42ea3e3dd44868493ae73ec06d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 3
-  accelerationTime: 0.3
-  decelerationTime: 0.5
+  maxSpeed: 3
+  accelerationTime: 0.15
+  decelerationTime: 0.2
   turnTime: 0.1
+  surfaceDistance: 0.8
+  terminalVelocity: 7
+  jumpApexHeight: 1.4
+  jumpApexTime: 0.5
 --- !u!4 &1433354315
 Transform:
   m_ObjectHideFlags: 0
@@ -1705,7 +1709,7 @@ Transform:
   m_GameObject: {fileID: 1433354312}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -6.92, y: -1.99, z: 0}
+  m_LocalPosition: {x: 3.5, y: -2.14, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
