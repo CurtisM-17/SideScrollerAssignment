@@ -15,13 +15,13 @@ public class PlayerController : MonoBehaviour
 	public float terminalVelocity = 7f;
 
 	public float jumpApexHeight, jumpApexTime;
-	float jumpVelocity;
+
+	float timer, lastGroundedTime;
+	public float coyoteTime;
 
 	float currentSpeed = 0f;
     Vector2 colliderSize;
 	bool isJumping = false;
-
-	float timer;
 
     public enum FacingDirection {
 		left, right
@@ -30,8 +30,6 @@ public class PlayerController : MonoBehaviour
 	public void Start() {
 		rb = GetComponent<Rigidbody2D>();
 		colliderSize = GetComponent<BoxCollider2D>().size;
-
-        jumpVelocity = 2 * (jumpApexHeight / jumpApexTime);
     }
 
 	public void Update() {
@@ -44,9 +42,8 @@ public class PlayerController : MonoBehaviour
 		MovementUpdate(playerInput);
 
 		if (Input.GetKey(KeyCode.Space)) Jump();
-		if (isJumping) Jump();
 
-		rb.velocity = new(rb.velocity.x, Mathf.Clamp(rb.velocity.y, -jumpVelocity, terminalVelocity));
+		rb.velocity = new(rb.velocity.x, Mathf.Clamp(rb.velocity.y, rb.velocity.y, terminalVelocity));
 	}
 
 	float FeatherSpeed(float featherTime) {
@@ -97,8 +94,12 @@ public class PlayerController : MonoBehaviour
 		bool middleRay = GroundedRay(rb.position.x);
 		bool rightRay = GroundedRay(rb.position.x + (colliderSize.x / 2));
 
+		bool isGrounded = (leftRay || middleRay || rightRay);
+
+		if (isGrounded) lastGroundedTime = timer;
+
 		// Only need one of the three rays to hit
-		return (leftRay || middleRay || rightRay);
+		return isGrounded;
 	}
 
 	public bool IsWalking() {
@@ -117,27 +118,27 @@ public class PlayerController : MonoBehaviour
 	}
 
 	/// Jump
-	float jumpStartPos;
-
 	void Jump() {
-		if (!isJumping) {
-            // Begin jump
-            if (isJumping || !IsGrounded()) return;
+		if (isJumping) return;
 
-            jumpVelocity = 2 * (jumpApexHeight / jumpApexTime); // Account for runtime updates
+		bool isGrounded = IsGrounded();
+		if (!isGrounded && (timer - lastGroundedTime > coyoteTime)) return; // Coyote time
 
-			isJumping = true;
-			rb.gravityScale = 0;
-			jumpStartPos = rb.position.y;
+		lastGroundedTime -= coyoteTime; // Prevent overlap
 
-			rb.velocity = new(rb.velocity.x, jumpVelocity);
-		}
+		float initialJumpVelocity = (2 * jumpApexHeight) / jumpApexTime;
+		rb.gravityScale = 0;
 
-		if (rb.position.y >= jumpStartPos + jumpApexHeight) rb.velocity = new(rb.velocity.x, -jumpVelocity);
-		//print(rb.position.y + " | " + jumpStartPos + " | " + jumpApexHeight + " | " + (jumpStartPos + jumpApexHeight));
-		if (rb.velocity.y == 0) isJumping = false;
+		rb.velocity = new Vector2(rb.velocity.x, initialJumpVelocity);
+		isJumping = true;
 
-		//float gravity = (-2 * jumpApexHeight) / (jumpApexTime * jumpApexTime);
-		//rb.velocity = new(rb.velocity.x, gravity * (timer - jumpStartTime) + jumpVelocity);
+		StartCoroutine(EndJumpAfterApex()); // Stop jump
+	}
+	private IEnumerator EndJumpAfterApex() {
+		yield return new WaitForSeconds(jumpApexTime);
+
+		// Re-enable gravity and let the character fall naturally
+		rb.gravityScale = 2;
+		isJumping = false;
 	}
 }
