@@ -73,7 +73,7 @@ public class PlayerController : MonoBehaviour
 		rb.velocity = new(rb.velocity.x, Mathf.Clamp(rb.velocity.y, rb.velocity.y, terminalVelocity));
 
 		// Shovel throw
-		if (Input.GetMouseButtonDown(0)) ThrowShovel();
+		if (Input.GetKeyDown(KeyCode.F)) ThrowShovel();
 	}
 
 	float FeatherSpeed(float featherTime) {
